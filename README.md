@@ -10,13 +10,27 @@ Only Kaggle's `train.csv` is used.
 
 ## Results
 
-<!-- TODO: fill in after the final training run (python train.py, then the app on data/test_set.csv). -->
-
-Held-out test set (179 passengers), at the classification threshold saved with the model:
+Held-out test set (179 passengers), at the classification threshold saved with the model (0.523):
 
 | ROC-AUC | PR-AUC | Accuracy | Precision | Recall | F1 |
 | --- | --- | --- | --- | --- | --- |
-| TBD | TBD | TBD | TBD | TBD | TBD |
+| 0.843 | 0.803 | 0.793 | 0.767 | 0.667 | 0.713 |
+
+Confusion matrix: 96 true negatives, 14 false positives, 23 false negatives, 46 true positives.
+
+Final model configuration:
+
+| Hyperparameter | Value | How it was set |
+| --- | --- | --- |
+| Hidden layers | 1 layer of 32 units | Hyperparameter search |
+| Dropout | 0.2 | Hyperparameter search |
+| Optimizer | Adam, learning rate 0.0001 | Fixed |
+| Batch size | 32 | Fixed |
+| Epochs | Up to 500, early stopping with patience 20 | Fixed |
+| Classification threshold | 0.523 | Chosen on the validation set during training |
+
+In the 5-fold cross-validation on the training set, the selected configuration reached a mean ROC-AUC of
+0.874 ± 0.010 (standard error); the tree-based baseline reached 0.875 ± 0.009.
 
 ---
 
@@ -81,7 +95,7 @@ Alternatively, download `train.csv` by hand and place it at `data/train.csv`.
 Invalid input (missing file, missing columns, labels other than 0/1, no trained model) is reported in the app with a
 short message saying how to fix it.
 
-![App: evaluated data and discrimination](docs/screenshots/app_top.png)
+![App: discrimination (ROC and precision-recall curves)](docs/screenshots/app_discrimination.png)
 ![App: performance at the classification threshold](docs/screenshots/app_threshold.png)
 
 ---
@@ -105,8 +119,9 @@ short message saying how to fix it.
 ├── data/
 │   ├── train.csv                Kaggle's train.csv (downloaded by train.py if missing)
 │   └── test_set.csv             Held-out test set, written by train.py
-└── models/
-    └── titanic_mlp.pt           Trained model, written by train.py
+├── models/
+│   └── titanic_mlp.pt           Trained model, written by train.py
+└── docs/screenshots/            App screenshots used in this README
 ```
 
 ---
