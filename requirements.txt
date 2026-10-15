@@ -1,0 +1,24 @@
+# Python 3.11+ (tested with Python 3.12).
+# For a smaller, CPU-only PyTorch on Linux, install torch first with:
+#   pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+
+# Data and analysis
+pandas==3.0.6
+numpy==2.5.4
+scikit-learn==1.9.1
+matplotlib==3.11.2
+seaborn==0.13.2
+
+# Model
+torch==2.14.1
+
+# Dataset download from Kaggle
+kagglehub==1.0.2
+requests==2.34.2
+
+# App
+streamlit==1.66.0
+
+# Notebooks
+notebook==7.6.3
+ipykernel==7.4.0
