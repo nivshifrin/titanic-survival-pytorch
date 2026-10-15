@@ -29,13 +29,13 @@ python -m venv .venv
 # Windows: .venv\Scripts\activate      macOS / Linux: source .venv/bin/activate
 pip install -r requirements.txt
 
-python train.py              # downloads the data from Kaggle, trains the model, saves it
+python train.py              # trains the model and saves it
 streamlit run ds_app.py      # opens the app in the browser
 ```
 
-A trained model (`models/titanic_mlp.pt`) and the held-out test set (`data/test_set.csv`) are included, so the app
-can be opened right after installation. `python train.py` retrains the model from scratch and overwrites both files;
-two runs produce identical weights.
+The dataset (`data/train.csv`), a trained model (`models/titanic_mlp.pt`) and the held-out test set
+(`data/test_set.csv`) are included, so everything runs right after installation. `python train.py` retrains the model
+from scratch and overwrites the model and the test set; two runs produce identical weights.
 
 ### Requirements
 
@@ -43,11 +43,12 @@ two runs produce identical weights.
 - On Linux, for a smaller CPU-only PyTorch, run
   `pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu` before installing the requirements.
 
-### Kaggle credentials
+### Downloading the data from Kaggle
 
-`train.py` and `eda.ipynb` download `train.csv` from the
+`train.py` and `eda.ipynb` download `train.csv` directly from the
 [Kaggle Titanic competition](https://www.kaggle.com/competitions/titanic/data) when `data/train.csv` is not present.
-Kaggle requires, once:
+A copy is included in the repository as a backup; to fetch it from Kaggle instead, delete `data/train.csv` and run
+`python train.py`. Kaggle requires, once:
 
 1. An API token: on [kaggle.com/settings](https://www.kaggle.com/settings) → "API" → "Create New Token". Save
    `kaggle.json` as `~/.kaggle/kaggle.json` (Windows: `C:\Users\<you>\.kaggle\kaggle.json`), or set the environment
@@ -102,7 +103,7 @@ short message saying how to fix it.
 │   ├── EXP_hyperparm.py         Cross-validated hyperparameter search
 │   └── results/                 Search results (CSV)
 ├── data/
-│   ├── train.csv                Downloaded from Kaggle at run time (not in the repository)
+│   ├── train.csv                Kaggle's train.csv (downloaded by train.py if missing)
 │   └── test_set.csv             Held-out test set, written by train.py
 └── models/
     └── titanic_mlp.pt           Trained model, written by train.py

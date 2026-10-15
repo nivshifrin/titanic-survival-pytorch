@@ -9,10 +9,6 @@ venv/
 # Jupyter
 .ipynb_checkpoints/
 
-# Kaggle's train.csv is downloaded at run time by train.py (src/data_download.py).
-# data/test_set.csv (the held-out test set) is kept in the repository as the sample dataset.
-data/train.csv
-
 # Kaggle credentials must never be committed
 kaggle.json
 
