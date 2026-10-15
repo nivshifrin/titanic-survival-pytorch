@@ -4,8 +4,8 @@ What it does:
     1. Loads the full dataset and holds out the test set with the shared split
        (the test set is not used here at all).
     2. Builds 5 stratified folds on the training set once, and reuses them everywhere.
-    3. Trains every configuration of an 18-point grid (depth, width, dropout)
-       on every fold through ``fit_and_train`` from ``train.py``,
+    3. Trains every configuration of a 48-point grid (depth, width, dropout,
+       learning rate, batch size) on every fold through ``fit_and_train`` from ``train.py``,
        so the search runs exactly the code that ``train.py`` ships. Each run is
        scored by ROC AUC on the fold's held-out part.
     4. Scores an untuned tree-based baseline (HistGradientBoostingClassifier with
@@ -52,10 +52,12 @@ from train import DEFAULT_DATA_PATH, SEED, TARGET, TEST_SIZE, fit_and_train, loa
 
 N_FOLDS = 5
 
-# The search grid: 2 x 3 x 3 = 18 configurations.
+# The search grid: 2 x 3 x 2 x 2 x 2 = 48 configurations.
 DEPTHS = [1, 2]
 WIDTHS = [16, 32, 64]
-DROPOUTS = [0.0, 0.2, 0.4]
+DROPOUTS = [0.2, 0.4]
+LEARNING_RATES = [0.0001, 0.001]
+BATCH_SIZES = [32, 64]
 
 # Columns kept for the baseline, and the ones treated as categories.
 BASELINE_COLUMNS = ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked"]
@@ -85,8 +87,10 @@ def build_folds(train_df: pd.DataFrame) -> Folds:
 def build_grid() -> list[dict]:
     """Return every configuration of the grid as a dict, in a fixed order."""
     return [
-        {"depth": depth, "width": width, "dropout": dropout}
-        for depth, width, dropout in itertools.product(DEPTHS, WIDTHS, DROPOUTS)
+        {"depth": depth, "width": width, "dropout": dropout, "learning_rate": learning_rate, "batch_size": batch_size}
+        for depth, width, dropout, learning_rate, batch_size in itertools.product(
+            DEPTHS, WIDTHS, DROPOUTS, LEARNING_RATES, BATCH_SIZES
+        )
     ]
 
 
@@ -104,7 +108,7 @@ def run_mlp_configuration(train_df: pd.DataFrame, folds: Folds, config: dict) ->
     Args:
         train_df: The training set.
         folds: The shared fold list.
-        config: ``depth``, ``width`` and ``dropout``.
+        config: ``depth``, ``width``, ``dropout``, ``learning_rate`` and ``batch_size``.
 
     Returns:
         One result row: the configuration, ``n_parameters``, the AUC per fold,
@@ -120,6 +124,8 @@ def run_mlp_configuration(train_df: pd.DataFrame, folds: Folds, config: dict) ->
             fold_validation_set,
             hidden_sizes=[config["width"]] * config["depth"],
             dropout=config["dropout"],
+            learning_rate=config["learning_rate"],
+            batch_size=config["batch_size"],
         )
         # Scored with the early-stopping best weights returned by fit_and_train.
         probabilities = predict_proba(model, preprocessor, fold_validation_set)
@@ -151,9 +157,9 @@ def run_mlp_search(train_df: pd.DataFrame, folds: Folds) -> pd.DataFrame:
         row = run_mlp_configuration(train_df, folds, config)
         rows.append(row)
         logger.info(
-            "Config %d/%d depth=%d width=%d dropout=%s: AUC %.3f +/- %.3f (SE)",
+            "Config %d/%d depth=%d width=%d dropout=%s learning_rate=%s batch_size=%d: AUC %.3f +/- %.3f (SE)",
             number, len(grid), config["depth"], config["width"], config["dropout"],
-            row["auc_mean"], row["auc_se"],
+            config["learning_rate"], config["batch_size"], row["auc_mean"], row["auc_se"],
         )
     return pd.DataFrame(rows)
 
@@ -224,7 +230,7 @@ def write_outputs(mlp_results: pd.DataFrame, baseline_results: pd.DataFrame, out
     """Write both result tables as CSV files to ``output_dir`` (created if missing)."""
     output_dir.mkdir(parents=True, exist_ok=True)
     mlp_columns = (
-        ["depth", "width", "dropout", "n_parameters"]
+        ["depth", "width", "dropout", "learning_rate", "batch_size", "n_parameters"]
         + FOLD_AUC_COLUMNS
         + ["auc_mean", "auc_se", "best_epoch_mean", "best_epoch_min", "best_epoch_max", "is_selected"]
     )
@@ -240,14 +246,17 @@ def print_summary(mlp_results: pd.DataFrame, baseline_results: pd.DataFrame) -> 
     """Print the top configurations, the selection, the baseline and the constants to set."""
     selected = mlp_results[mlp_results["is_selected"]].iloc[0]
     baseline = baseline_results.iloc[0]
-    table_columns = ["depth", "width", "dropout", "n_parameters", "auc_mean", "auc_se",
-                     "best_epoch_min", "best_epoch_max", "is_selected"]
+    table_columns = ["depth", "width", "dropout", "learning_rate", "batch_size", "n_parameters", "auc_mean",
+                     "auc_se", "best_epoch_min", "best_epoch_max", "is_selected"]
 
     print("\n=== Top 10 configurations by auc_mean ===")
     print(mlp_results[table_columns].head(10).to_string(index=False, float_format=lambda v: f"{v:.4f}"))
 
     print("\n=== Selected configuration (highest auc_mean) ===")
-    print(f"depth={selected['depth']} width={selected['width']} dropout={selected['dropout']}")
+    print(
+        f"depth={selected['depth']} width={selected['width']} dropout={selected['dropout']} "
+        f"learning_rate={selected['learning_rate']} batch_size={selected['batch_size']}"
+    )
     print(
         f"auc_mean={selected['auc_mean']:.4f} auc_se={selected['auc_se']:.4f} "
         f"n_parameters={selected['n_parameters']} best_epoch range={selected['best_epoch_min']}-{selected['best_epoch_max']}"
@@ -259,6 +268,8 @@ def print_summary(mlp_results: pd.DataFrame, baseline_results: pd.DataFrame) -> 
     print("\n=== Set by hand ===")
     print(f"src/model.py: HIDDEN_SIZES = {[int(selected['width'])] * int(selected['depth'])}")
     print(f"src/model.py: DROPOUT = {selected['dropout']}")
+    print(f"train.py: LEARNING_RATE = {selected['learning_rate']}")
+    print(f"train.py: BATCH_SIZE = {selected['batch_size']}")
 
 
 def main() -> None:

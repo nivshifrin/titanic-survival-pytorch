@@ -11,7 +11,7 @@ TARGET_COLUMN = "Survived"
 
 
 def split_dataset(
-    full_df: pd.DataFrame, test_size: float = 0.2, seed: int = 42
+    full_df: pd.DataFrame, test_size: float = 0.2, seed: int = 2024
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Split the full dataset into a training set and a held-out test set.
 

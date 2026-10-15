@@ -46,11 +46,11 @@ from src.preprocessing import TitanicPreprocessor, split_features_target
 # ---------------------------------------------------------------------------
 # Settings
 # ---------------------------------------------------------------------------
-SEED = 42
+SEED = 2024
 TEST_SIZE = 0.2          # share of full_df held out as the test set
 VALIDATION_SIZE = 0.2    # share of train_df used as the validation set
 
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.001
 BATCH_SIZE = 32
 MAX_EPOCHS = 500
 PATIENCE = 20            # epochs without improvement before early stopping

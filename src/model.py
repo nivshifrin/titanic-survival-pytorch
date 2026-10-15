@@ -32,7 +32,7 @@ from src.preprocessing import TitanicPreprocessor
 DEVICE = torch.device("cpu")
 
 # Network architecture: one hidden layer of 32 units, dropout 0.2.
-HIDDEN_SIZES = [32]
+HIDDEN_SIZES = [64, 64]
 DROPOUT = 0.2
 
 

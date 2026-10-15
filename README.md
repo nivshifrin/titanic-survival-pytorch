@@ -10,27 +10,27 @@ Only Kaggle's `train.csv` is used.
 
 ## Results
 
-Held-out test set (179 passengers), at the classification threshold saved with the model (0.523):
+Held-out test set (179 passengers), at the classification threshold saved with the model (0.533):
 
 | ROC-AUC | PR-AUC | Accuracy | Precision | Recall | F1 |
 | --- | --- | --- | --- | --- | --- |
-| 0.843 | 0.803 | 0.793 | 0.767 | 0.667 | 0.713 |
+| 0.852 | 0.779 | 0.799 | 0.770 | 0.681 | 0.723 |
 
-Confusion matrix: 96 true negatives, 14 false positives, 23 false negatives, 46 true positives.
+Confusion matrix: 96 true negatives, 14 false positives, 22 false negatives, 47 true positives.
 
 Final model configuration:
 
 | Hyperparameter | Value | How it was set |
 | --- | --- | --- |
-| Hidden layers | 1 layer of 32 units | Hyperparameter search |
+| Hidden layers | 2 layers of 64 units | Hyperparameter search |
 | Dropout | 0.2 | Hyperparameter search |
-| Optimizer | Adam, learning rate 0.0001 | Fixed |
-| Batch size | 32 | Fixed |
+| Learning rate (Adam) | 0.001 | Hyperparameter search |
+| Batch size | 32 | Hyperparameter search |
 | Epochs | Up to 500, early stopping with patience 20 | Fixed |
-| Classification threshold | 0.523 | Chosen on the validation set during training |
+| Classification threshold | 0.533 | Chosen on the validation set during training |
 
 In the 5-fold cross-validation on the training set, the selected configuration reached a mean ROC-AUC of
-0.874 ± 0.010 (standard error); the tree-based baseline reached 0.875 ± 0.009.
+0.875 ± 0.009 (standard error); the tree-based baseline reached 0.868 ± 0.010.
 
 ---
 
@@ -167,10 +167,11 @@ weights of the best epoch are kept. Everything is seeded.
 
 ### Hyperparameter search
 
-`hyperparameter_search/EXP_hyperparm.py` compares 18 configurations — depth {1, 2} × width {16, 32, 64} ×
-dropout {0, 0.2, 0.4} — with 5-fold cross-validation on the training set, because a single validation split of
-~140 rows is too noisy to compare configurations. Each configuration is scored by ROC-AUC, which measures ranking
-quality independently of the classification threshold, and the one with the highest mean AUC is selected.
+`hyperparameter_search/EXP_hyperparm.py` compares 48 configurations — depth {1, 2} × width {16, 32, 64} ×
+dropout {0.2, 0.4} × learning rate {0.0001, 0.001} × batch size {32, 64} — with 5-fold cross-validation on the
+training set, because a single validation split of ~140 rows is too noisy to compare configurations. Each
+configuration is scored by ROC-AUC, which measures ranking quality independently of the classification threshold,
+and the one with the highest mean AUC is selected.
 
 Every run calls `fit_and_train()` from `train.py`, the same function the final training uses, so what is tuned is
 exactly what is trained.
